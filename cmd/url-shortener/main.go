@@ -1,11 +1,18 @@
 package main
 
 import (
-	"encoding/json"
 	"log/slog"
 	"os"
 
 	"github.com/valitovgaziz/url-shortener/internall/config"
+	"github.com/valitovgaziz/url-shortener/internall/lib/logger/sl"
+	"github.com/valitovgaziz/url-shortener/internall/storage/sqlite"
+)
+
+const (
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
 )
 
 func init() {
@@ -16,11 +23,37 @@ func main() {
 
 	// load config
 	cfg := config.MustLoad()
-	
-	strg, err := json.Marshal(cfg)
+
+	log := setupLogger(cfg.Env)
+
+	log.Info("starting url-shortener", slog.String("env", cfg.Env))
+	log.Debug("debug messages are enabled")
+
+
+	storage, err := sqlite.New(cfg.StoragePath)
 	if err!= nil {
-		slog.Error("error", "error", err)
-		return
+		log.Error("failed to init storage %w", sl.Err(err))
+		os.Exit(1)
 	}
-	slog.Info("config", "config", string(strg))
+	_ = storage
+}
+
+func setupLogger(env string) *slog.Logger {
+	var log *slog.Logger
+	// setup logger
+	switch env {
+	case envLocal:
+		log = slog.New(
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		)
+	case envDev:
+		log = slog.New(
+			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		)
+	case envProd:
+		log = slog.New(
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
+		)
+	}
+	return log
 }
