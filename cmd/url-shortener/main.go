@@ -4,9 +4,12 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/valitovgaziz/url-shortener/internall/config"
-	"github.com/valitovgaziz/url-shortener/internall/lib/logger/sl"
-	"github.com/valitovgaziz/url-shortener/internall/storage/sqlite"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/valitovgaziz/url-shortener/internal/config"
+	mwLogger "github.com/valitovgaziz/url-shortener/internal/http-server/middleware/logger"
+	"github.com/valitovgaziz/url-shortener/internal/lib/logger/sl"
+	"github.com/valitovgaziz/url-shortener/internal/storage/sqlite"
 )
 
 const (
@@ -29,13 +32,25 @@ func main() {
 	log.Info("starting url-shortener", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
 
-
+	// init storage
 	storage, err := sqlite.New(cfg.StoragePath)
-	if err!= nil {
+	if err != nil {
 		log.Error("failed to init storage %w", sl.Err(err))
 		os.Exit(1)
 	}
+
 	_ = storage
+
+	router := chi.NewRouter()
+
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(mwLogger.New(log))
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
+
+	// TODO: run server
+
 }
 
 func setupLogger(env string) *slog.Logger {
