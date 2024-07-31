@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/valitovgaziz/url-shortener/internal/config"
 	mwLogger "github.com/valitovgaziz/url-shortener/internal/http-server/middleware/logger"
+	"github.com/valitovgaziz/url-shortener/internal/lib/logger/handlers/slogpretty"
 	"github.com/valitovgaziz/url-shortener/internal/lib/logger/sl"
 	"github.com/valitovgaziz/url-shortener/internal/storage/sqlite"
 )
@@ -58,17 +59,23 @@ func setupLogger(env string) *slog.Logger {
 	// setup logger
 	switch env {
 	case envLocal:
-		log = slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
+		log = setupPrettySlog(slog.LevelDebug)
 	case envDev:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
+		log = setupPrettySlog(slog.LevelDebug)
 	case envProd:
-		log = slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
-		)
+		log = setupPrettySlog(slog.LevelInfo)
 	}
 	return log
+}
+
+func setupPrettySlog(level slog.Level) *slog.Logger {
+	opts := slogpretty.PrettyHandlerOptions{
+		SlogOpts: &slog.HandlerOptions{
+			Level: level,
+		},
+	}
+
+	handler := opts.NewPrettyHandler(os.Stdout)
+
+	return slog.New(handler)
 }
