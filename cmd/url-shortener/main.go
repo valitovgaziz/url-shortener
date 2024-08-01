@@ -16,6 +16,7 @@ import (
 	"github.com/valitovgaziz/url-shortener/internal/config"
 	"github.com/valitovgaziz/url-shortener/internal/http-server/handlers/redirect"
 	"github.com/valitovgaziz/url-shortener/internal/http-server/handlers/url/save"
+	"github.com/valitovgaziz/url-shortener/internal/http-server/handlers/url/delete"
 	mwLogger "github.com/valitovgaziz/url-shortener/internal/http-server/middleware/logger"
 	"github.com/valitovgaziz/url-shortener/internal/lib/logger/handlers/slogpretty"
 	"github.com/valitovgaziz/url-shortener/internal/lib/logger/sl"
@@ -64,6 +65,7 @@ func main() {
 		}))
 
 		r.Post("/", save.New(log, storage))
+		r.Delete("/", delete.Delete(log, storage))
 		// TODO: add DELETE /url/{id}
 	})
 
